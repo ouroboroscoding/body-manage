@@ -1,0 +1,37 @@
+{
+	"git": {
+		"__optional__": true,
+		"checkout": {
+			"__type__": "bool",
+			"__optional__": true
+		},
+		"submodules": {
+			"__type__": "bool",
+			"__optional__": true
+		}
+	},
+	"path": {
+		"__type__": "string"
+	},
+	"python": {
+		"__optional__": true,
+		"which": {
+			"__type__": "string",
+			"__optional__": true
+		},
+		"requirements": {
+			"__type__": "string",
+			"__optional__": true
+		}
+	},
+	"services": {
+		"__hash__": {
+			"__type__": "string",
+			"__regex__": "^[a-zA-Z][a-zA-Z0-9_-]+$"
+		},
+		"supervisor": {
+			"__type__": "string",
+			"__optional__": true
+		}
+	}
+}

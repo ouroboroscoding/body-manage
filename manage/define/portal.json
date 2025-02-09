@@ -1,0 +1,29 @@
+{
+	"git": {
+		"__optional__": true,
+		"checkout": {
+			"__type__": "bool",
+			"__optional__": true
+		},
+		"submodules": {
+			"__type__": "bool",
+			"__optional__": true
+		}
+	},
+	"node": {
+		"force_install": {
+			"__type__": "bool",
+			"__optional__": true
+		},
+		"nvm": {
+			"__type__": "string",
+			"__optional__": true
+		}
+	},
+	"output": {
+		"__type__": "string"
+	},
+	"path": {
+		"__type__": "string"
+	}
+}
