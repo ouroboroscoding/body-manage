@@ -27,6 +27,9 @@ from os.path import abspath, expanduser, isdir, isfile
 from pathlib import Path
 import subprocess
 
+# Project imports
+from .errors import GIT_ISSUE
+
 class Manage(Service):
 	"""Manage Service class
 
@@ -49,6 +52,22 @@ class Manage(Service):
 
 		# Init the config
 		self.reset()
+
+	@classmethod
+	def _real(cls, path: str) -> str:
+		"""Real
+
+		Takes a possible relative and user based path into a full absolute path
+
+		Arguments:
+			path (str): The path to turn into an absolute path
+
+		Returns:
+			str
+		"""
+		return abspath(
+			'~' in path and expanduser(path) or path
+		)
 
 	def _portal_validation(self, name: str, data: dict) -> Response:
 		"""Portal Validation
@@ -77,36 +96,26 @@ class Manage(Service):
 		# Strip pre/post whitespace
 		data.path = data.path.strip()
 
-		# Copy it
-		sDir = data.path
-
-		# If we got a tilde
-		if '~' in sDir:
-			sDir = expanduser(sDir)
-
-		# Turn it into an absolute path
-		sDir = abspath(sDir)
-
 		# If it's not a valid directory
-		if not isdir(sDir):
-			lErrors.append([ 'path', 'not a valid directory' ])
+		if not isdir(self._real(data.path)):
+			lErrors.append([ 'record.path', 'not a valid directory' ])
 
 		# Strip pre/post whitespace
 		data.output = data.output.strip()
 
-		# Copy it
-		sDir = data.output
-
-		# If we got a tilde
-		if '~' in sDir:
-			sDir = expanduser(sDir)
-
-		# Turn it into an absolute path
-		sDir = abspath(sDir)
-
 		# If it's not a valid directory
-		if not isdir(sDir):
-			lErrors.append([ 'output', 'not a valid directory' ])
+		if not isdir(self._real(data.output)):
+			lErrors.append([ 'record.output', 'not a valid directory' ])
+
+		# If we have a 'backups' argument
+		if 'backups' in data and data.backups:
+
+			# Strip pre/post whitespace
+			data.backups = data.backups.strip()
+
+			# If it's not a valid directory
+			if not isdir(self._real(data.backups)):
+				lErrors.append([ 'record.backups', 'not a valid directory' ])
 
 		# If we have an 'nvm' argument
 		if 'nvm' in data.node and data.node.nvm:
@@ -117,10 +126,10 @@ class Manage(Service):
 			# If we have a value
 			if data.node.nvm:
 
-				# Get the list of nvm aliases
+				# Run NVM
 				try:
 					sOut = subprocess.check_output(
-						'/bin/bash -i -c "nvm alias %s"' % data.node.nvm,
+						'. ~/.nvm/nvm.sh && nvm alias %s' % data.node.nvm,
 						shell = True
 					)
 
@@ -162,6 +171,155 @@ class Manage(Service):
 
 		# Return OK
 		return Response(True)
+
+	def portal_build_create(self, req: jobject) -> Response:
+		"""Portal Build create
+
+		Runs the update process for the specific portal
+
+		Arguments:
+			req (jobject): The request details, which can include 'data', \
+						'environment', and 'session'
+
+		Returns:
+			Response
+		"""
+
+		# Verify the permissions
+		access.verify(req.session, 'manage_portal_build', access.CREATE)
+
+		# Verify minimum data
+		try: evaluate(req.data, [ 'name', 'backup' ])
+		except ValueError as e:
+			return Error(
+				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
+			)
+
+		# If the portal doesn't exist
+		if req.data.name not in self._conf.portals:
+			return Error(errors.DB_NO_RECORD, [ req.data.name, 'portal' ])
+
+		# Simplify life
+		dPortal = self._conf.portals[req.data.name]
+
+		# Init the parts
+		lParts = [
+			'cd %s' % self._real(dPortal.path),
+			'%s fetch' % self._git
+		]
+
+		# If we have a checkout branch, add the checkout part
+		if 'checkout' in req.data and req.data.checkout:
+			lParts.append('%s checkout %s' % ( self._git, req.data.checkout ))
+
+		# If we have an nvm alias, add the nvm part
+		if dPortal.node.nvm:
+			lParts.extend([
+				'. ~/.nvm/nvm.sh',
+				'nvm alias %s' % dPortal.node.nvm
+			])
+
+		# Add npm install part
+		lParts.append(
+			dPortal.node.force_install and \
+				'npm install --force' or \
+				'npm install'
+		)
+
+		# Build the
+
+	def portal_build_read(self, req: jobject) -> Response:
+		"""Portal Build read
+
+		Fetches info about the repo for the specific portal
+
+		Arguments:
+			req (jobject): The request details, which can include 'data', \
+						'environment', and 'session'
+
+		Returns:
+			Response
+		"""
+
+		# Verify the permissions
+		access.verify(req.session, 'manage_portal_build', access.READ)
+
+		# Verify minimum data
+		try: evaluate(req.data, [ 'name' ])
+		except ValueError as e:
+			return Error(
+				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
+			)
+
+		# If the portal doesn't exist
+		if req.data.name not in self._conf.portals:
+			return Error(errors.DB_NO_RECORD, [ req.data.name, 'portal' ])
+
+		# Simplify life
+		dPortal = self._conf.portals[req.data.name]
+
+		# Init return
+		dRet = jobject({})
+
+		# Copy the folder
+		sDir = dPortal.path
+
+		# If the portal has ~
+		if '~' in sDir:
+			sDir = expanduser(sDir)
+
+		# Make it an absolute path
+		sDir = abspath(sDir)
+
+		# Get the repo up to date
+		try:
+			subprocess.check_output(
+				'cd %s && %s fetch' % (sDir, self._git),
+				shell = True
+			)
+		except subprocess.CalledProcessError as e:
+			return Error(GIT_ISSUE, str(e))
+
+		# Fetch the git status
+		try:
+			dRet.status = subprocess.check_output('cd %s && %s status' % (
+				sDir,
+				self._git
+			), shell = True).decode().strip()
+		except subprocess.CalledProcessError as e:
+			return Error(GIT_ISSUE, str(e))
+
+		# If checkout is allowed
+		if dPortal.git.checkout:
+
+			# Fetch the list of branches
+			try:
+				lBranches = subprocess.check_output(
+					'cd %s && %s branch --list' % (
+						sDir,
+						self._git
+					),
+					shell = True
+				).decode().strip().split('\n')
+
+			except subprocess.CalledProcessError as e:
+				return Error(GIT_ISSUE, str(e))
+
+			# Init return branches
+			dRet.branches = []
+
+			# Step through the branches
+			for s in lBranches:
+
+				# If the branch is set, store it in the return
+				if s[0] == '*':
+					dRet.branch = s[2:]
+
+				# Add the branch
+				dRet.branches.append(s[2:])
+
+		# Return info
+		return Response(dRet)
 
 	def portal_create(self, req: jobject) -> Response:
 		"""Portal create
@@ -317,19 +475,9 @@ class Manage(Service):
 		# Strip pre/post whitespace
 		data.path = data.path.strip()
 
-		# Copy it
-		sDir = data.path
-
-		# If we got a tilde
-		if '~' in sDir:
-			sDir = expanduser(sDir)
-
-		# Turn it into an absolute path
-		sDir = abspath(sDir)
-
 		# If it's not a valid directory
-		if not isdir(sDir):
-			lErrors.append([ 'path', 'not a valid directory' ])
+		if not isdir(self._real(data.path)):
+			lErrors.append([ 'record.path', 'not a valid directory' ])
 
 		# If we have a 'which' argument
 		if 'which' in data.python and data.python.which:
@@ -340,19 +488,9 @@ class Manage(Service):
 			# If it's not empty
 			if data.python.which:
 
-				# Copy it
-				sFile = data.python.which
-
-				# If we got a tilde
-				if '~' in sFile:
-					sFile = expanduser(sFile)
-
-				# Turn it into an absolute path
-				sFile = abspath(sFile)
-
 				# If it's not a valid file
-				if not isfile(sFile):
-					lErrors.append([ 'python.which', 'not found' ])
+				if not isfile(self._real(data.python.which)):
+					lErrors.append([ 'record.python.which', 'not found' ])
 
 			# Else, set it to null
 			else:
@@ -371,19 +509,11 @@ class Manage(Service):
 			# If it's not empty
 			if data.python.requirements:
 
-				# Copy it
-				sFile = data.python.requirements
-
-				# If we got a tilde
-				if '~' in sFile:
-					sFile = expanduser(sFile)
-
-				# Turn it into an absolute path
-				sFile = abspath(sFile)
-
 				# If it's not a valid file
-				if not isfile(sFile):
-					lErrors.append([ 'python.requirements', 'not found' ])
+				if not isfile(self._real(data.python.requirements)):
+					lErrors.append(
+						[ 'record.python.requirements', 'not found' ]
+					)
 
 			# Else, set it to null
 			else:
@@ -472,6 +602,99 @@ class Manage(Service):
 
 		# Return OK
 		return Response(True)
+
+	def rest_build_read(self, req: jobject) -> Response:
+		"""Portal Build read
+
+		Fetches info about the repo for the specific rest
+
+		Arguments:
+			req (jobject): The request details, which can include 'data', \
+						'environment', and 'session'
+
+		Returns:
+			Response
+		"""
+
+		# Verify the permissions
+		access.verify(req.session, 'manage_rest_build', access.READ)
+
+		# Verify minimum data
+		try: evaluate(req.data, [ 'name' ])
+		except ValueError as e:
+			return Error(
+				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
+			)
+
+		# If the rest doesn't exist
+		if req.data.name not in self._conf.rest:
+			return Error(errors.DB_NO_RECORD, [ req.data.name, 'rest' ])
+
+		# Simplify life
+		dPortal = self._conf.rest[req.data.name]
+
+		# Init return
+		dRet = jobject({})
+
+		# Copy the folder
+		sDir = dPortal.path
+
+		# If the rest has ~
+		if '~' in sDir:
+			sDir = expanduser(sDir)
+
+		# Make it an absolute path
+		sDir = abspath(sDir)
+
+		# Get the repo up to date
+		try:
+			subprocess.check_output(
+				'cd %s && %s fetch' % (sDir, self._git),
+				shell = True
+			)
+		except subprocess.CalledProcessError as e:
+			return Error(GIT_ISSUE, str(e))
+
+		# Fetch the git status
+		try:
+			dRet.status = subprocess.check_output('cd %s && %s status' % (
+				sDir,
+				self._git
+			), shell = True).decode().strip()
+		except subprocess.CalledProcessError as e:
+			return Error(GIT_ISSUE, str(e))
+
+		# If checkout is allowed
+		if dPortal.git.checkout:
+
+			# Fetch the list of branches
+			try:
+				lBranches = subprocess.check_output(
+					'cd %s && %s branch --list' % (
+						sDir,
+						self._git
+					),
+					shell = True
+				).decode().strip().split('\n')
+
+			except subprocess.CalledProcessError as e:
+				return Error(GIT_ISSUE, str(e))
+
+			# Init return branches
+			dRet.branches = []
+
+			# Step through the branches
+			for s in lBranches:
+
+				# If the branch is set, store it in the return
+				if s[0] == '*':
+					dRet.branch = s[2:]
+
+				# Add the branch
+				dRet.branches.append(s[2:])
+
+		# Return info
+		return Response(dRet)
 
 	def rest_create(self, req: jobject) -> Response:
 		"""REST create
@@ -597,6 +820,10 @@ class Manage(Service):
 		# Make a new record from the old and new data
 		dRest = combine(self._conf.rest[req.data.name], req.data.record)
 
+		# If we specifically changed services
+		if 'services' in req.data.record:
+			dRest['services'] = req.data.record.services
+
 		# If any services are None, delete them
 		for s in list(dRest.services.keys()):
 			if dRest.services[s] == None:
@@ -616,6 +843,7 @@ class Manage(Service):
 
 		# Store the name of the file
 		self._path = config.manage.config('./manage.json')
+		self._git = config.manage.git('/usr/bin/git')
 
 		# Fetch the configuration and store it as a jobject
 		self._conf = jobject( jsonb.load( self._path ) )

@@ -1,4 +1,8 @@
 {
+	"backups": {
+		"__type__": "string",
+		"__optional__": true
+	},
 	"git": {
 		"checkout": {
 			"__type__": "bool"
@@ -12,6 +16,10 @@
 			"__type__": "bool"
 		},
 		"nvm": {
+			"__type__": "string",
+			"__optional__": true
+		},
+		"script": {
 			"__type__": "string",
 			"__optional__": true
 		}
