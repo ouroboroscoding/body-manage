@@ -1,20 +1,16 @@
 {
 	"git": {
-		"__optional__": true,
 		"checkout": {
-			"__type__": "bool",
-			"__optional__": true
+			"__type__": "bool"
 		},
 		"submodules": {
-			"__type__": "bool",
-			"__optional__": true
+			"__type__": "bool"
 		}
 	},
 	"path": {
 		"__type__": "string"
 	},
 	"python": {
-		"__optional__": true,
 		"which": {
 			"__type__": "string",
 			"__optional__": true

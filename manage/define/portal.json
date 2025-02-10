@@ -1,19 +1,15 @@
 {
 	"git": {
-		"__optional__": true,
 		"checkout": {
-			"__type__": "bool",
-			"__optional__": true
+			"__type__": "bool"
 		},
 		"submodules": {
-			"__type__": "bool",
-			"__optional__": true
+			"__type__": "bool"
 		}
 	},
 	"node": {
 		"force_install": {
-			"__type__": "bool",
-			"__optional__": true
+			"__type__": "bool"
 		},
 		"nvm": {
 			"__type__": "string",

@@ -23,8 +23,9 @@ import jsonb
 from tools import clone, combine, evaluate, without
 
 # Python imports
+from os.path import abspath, expanduser, isdir, isfile
 from pathlib import Path
-from os.path import abspath, expanduser, isfile
+import subprocess
 
 class Manage(Service):
 	"""Manage Service class
@@ -64,53 +65,81 @@ class Manage(Service):
 
 		# Validate the data
 		if not self._portal.valid(data):
-			return Error(errors.DATA_FIELDS, self._portal._validation_failures)
+			return Error(
+				errors.DATA_FIELDS,
+				[ [ 'record.%s' % l[0], l[1] ] \
+	 				for l in self._portal._validation_failures ]
+			)
 
 		# Init possible file errors
 		lErrors = []
 
-		# Do we have a git section?
-		if 'git' in data:
+		# Strip pre/post whitespace
+		data.path = data.path.strip()
 
-			# Do we have a checkout flag, is it false, then delete it
-			if 'checkout' in data.git and \
-				data.git.checkout == False:
-				del data.git.checkout
+		# Copy it
+		sDir = data.path
 
-			# Do we have a submodule flag, is it false, then delete it
-			if 'submodule' in data.git and \
-				data.git.submodule == False:
-				del data.git.submodule
+		# If we got a tilde
+		if '~' in sDir:
+			sDir = expanduser(sDir)
 
-			# If we don't have any flags, delete git
-			if not data.git:
-				del data.git
+		# Turn it into an absolute path
+		sDir = abspath(sDir)
 
-		# Do we have a node section
-		if 'node' in data:
+		# If it's not a valid directory
+		if not isdir(sDir):
+			lErrors.append([ 'path', 'not a valid directory' ])
 
-			# Do we have a force_install flag, is it false, then delete it
-			if 'force_install' in data.git and \
-				data.git.force_install == False:
-				del data.git.force_install
+		# Strip pre/post whitespace
+		data.output = data.output.strip()
 
-			# Do we have a nvm string
-			if 'nvm' in data.node:
+		# Copy it
+		sDir = data.output
 
-				# If it's an empty string, then delete it
-				if not data.node.nvm or data.node.nvm.strip() == '':
-					del data.node.nvm
+		# If we got a tilde
+		if '~' in sDir:
+			sDir = expanduser(sDir)
 
-				# Else, we got something
-				else:
+		# Turn it into an absolute path
+		sDir = abspath(sDir)
 
-					# If it's not a valid alias
-					# TODO check alias
-					pass
+		# If it's not a valid directory
+		if not isdir(sDir):
+			lErrors.append([ 'output', 'not a valid directory' ])
 
-			# If we don't have any flags, delete node
-			if not data.node:
-				del data.node
+		# If we have an 'nvm' argument
+		if 'nvm' in data.node and data.node.nvm:
+
+			# Strip pre/post whitespace
+			data.node.nvm = data.node.nvm.strip()
+
+			# If we have a value
+			if data.node.nvm:
+
+				# Get the list of nvm aliases
+				try:
+					sOut = subprocess.check_output(
+						'/bin/bash -i -c "nvm alias %s"' % data.node.nvm,
+						shell = True
+					)
+
+					# If we got not nothing
+					if not sOut:
+						lErrors.append([ 'record.node.nvm', 'invalid alias' ])
+
+				# If there was an error
+				except subprocess.CalledProcessError as e:
+					print(e)
+					lErrors.append([ 'record.node.nvm', str(e.args) ])
+
+			# Else, set it to null
+			else:
+				data.node.nvm = None
+
+		# Else, set it to null
+		else:
+			data.node.nvm = None
 
 		# If there's errors
 		if lErrors:
@@ -276,91 +305,151 @@ class Manage(Service):
 
 		# Validate the data
 		if not self._rest.valid(data):
-			return Error(errors.DATA_FIELDS, self._rest._validation_failures)
+			return Error(
+				errors.DATA_FIELDS,
+				[ [ 'record.%s' % l[0], l[1] ] \
+	 				for l in self._rest._validation_failures ]
+			)
 
 		# Init possible file errors
 		lErrors = []
 
-		# Do we have a git section?
-		if 'git' in data:
+		# Strip pre/post whitespace
+		data.path = data.path.strip()
 
-			# Do we have a checkout flag, is it false, then delete it
-			if 'checkout' in data.git and \
-				data.git.checkout == False:
-				del data.git.checkout
+		# Copy it
+		sDir = data.path
 
-			# Do we have a submodule flag, is it false, then delete it
-			if 'submodule' in data.git and \
-				data.git.submodule == False:
-				del data.git.submodule
+		# If we got a tilde
+		if '~' in sDir:
+			sDir = expanduser(sDir)
 
-			# If we don't have any flags, delete git
-			if not data.git:
-				del data.git
+		# Turn it into an absolute path
+		sDir = abspath(sDir)
 
-		# Do we have a python section
-		if 'python' in data:
+		# If it's not a valid directory
+		if not isdir(sDir):
+			lErrors.append([ 'path', 'not a valid directory' ])
 
-			# Do we have a which string
-			if 'which' in data.python:
+		# If we have a 'which' argument
+		if 'which' in data.python and data.python.which:
 
-				# Is it an empty string, then delete it
-				if not data.python.which or data.python.which.strip() == '':
-					del data.python.which
+			# Strip pre/post whitespace
+			data.python.which = data.python.which.strip()
 
-				# Else, we got something
-				else:
+			# If it's not empty
+			if data.python.which:
 
-					# Copy it
-					sFile = data.python.which
+				# Copy it
+				sFile = data.python.which
 
-					# If we got a tilde
-					if '~' in sFile:
-						sFile = expanduser(sFile)
+				# If we got a tilde
+				if '~' in sFile:
+					sFile = expanduser(sFile)
 
-					# Turn it into an absolute path
-					sFile = abspath(sFile)
+				# Turn it into an absolute path
+				sFile = abspath(sFile)
 
-					# If it's not a valid file
-					if not isfile(sFile):
-						lErrors.append([ 'python.which', 'not found' ])
+				# If it's not a valid file
+				if not isfile(sFile):
+					lErrors.append([ 'python.which', 'not found' ])
 
-			# Do we have a requirements string
-			if 'requirements' in data.python:
+			# Else, set it to null
+			else:
+				data.python.which = None
 
-				# If it's an empty string, then delete it
-				if not data.python.requirements or \
-					data.python.requirements.strip() == '':
-					del data.python.requirements
+		# Else, set it to null
+		else:
+			data.python.which = None
 
-				# Else, we got something
-				else:
+		# If we have a 'requirements' argument
+		if 'requirements' in data.python and data.python.requirements:
 
-					# Copy it
-					sFile = data.python.requirements
+			# Strip pre/post whitespace
+			data.python.requirements = data.python.requirements.strip()
 
-					# If we got a tilde
-					if '~' in sFile:
-						sFile = expanduser(sFile)
+			# If it's not empty
+			if data.python.requirements:
 
-					# Turn it into an absolute path
-					sFile = abspath(sFile)
+				# Copy it
+				sFile = data.python.requirements
 
-					# If it's not a valid file
-					if not isfile(sFile):
-						lErrors.append([ 'python.requirements', 'not found' ])
+				# If we got a tilde
+				if '~' in sFile:
+					sFile = expanduser(sFile)
 
-			# If we don't have any flags, delete python
-			if not data.python:
-				del data.python
+				# Turn it into an absolute path
+				sFile = abspath(sFile)
+
+				# If it's not a valid file
+				if not isfile(sFile):
+					lErrors.append([ 'python.requirements', 'not found' ])
+
+			# Else, set it to null
+			else:
+				data.python.requirements = None
+
+		# Else, set it to null
+		else:
+			data.python.requirements = None
+
+		# Try to call a subprocess
+		try:
+
+			# Fetch the list of supervisor programs and store just the name
+			lOut = subprocess.check_output(
+				'supervisorctl avail',
+				shell = True).decode().split('\n')
+
+			# Init the list of programs
+			lPrograms = []
+
+			# Go though each line, get the program, and add it to the list
+			for s in lOut:
+				if s != '':
+					l = s.split(' ', 1)
+					lPrograms.append(l[0])
+
+		# If there's any issue with the process
+		except subprocess.CalledProcessError as e:
+			lErrors.append([ 'record.services', str(e.args) ])
 
 		# Step through the services
-		for d in data.services.values():
+		for k, d in data.services.items():
 
-			# If there's a supervisor string, and it's empty, then delete it
-			if 'supervisor' in d and \
-				d.supervisor.strip() == '':
-				del d.supervisor
+			# If we have a 'supervisor' argument
+			if 'supervisor' in d and d.supervisor:
+
+				# Strip pre/post whitespace
+				d.supervisor = d.supervisor.strip()
+
+				# If we have a value
+				if d.supervisor:
+					pass
+
+				# Else, set it to null
+				else:
+					d.supervisor = None
+
+			# Else, set it to null
+			else:
+				d.supervisor = None
+
+			# If we have a specific value
+			if d.supervisor:
+				if d.supervisor not in lPrograms:
+					lErrors.append(
+						[ 'record.services.%s.supervisor' % k,
+	   						'not a valid supervisor program' ]
+					)
+
+			# Else, check the main name
+			else:
+				if k not in lPrograms:
+					lErrors.append(
+						[ 'record.services.%s' % k,
+					 		'not a valid supervisor program' ]
+					)
 
 		# If there's errors
 		if lErrors:
