@@ -25,6 +25,7 @@ setup(
 	]},
 	python_requires='>=3.10',
 	install_requires=[
+		'arrow>=1.3.0,<1.4',
 		'brain2-oc>=2.1.5,<2.2',
 		'config-oc>=1.1.0,<1.2',
 		'define-oc>=1.0.3,<1.1',

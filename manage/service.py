@@ -23,12 +23,13 @@ import jsonb
 from tools import clone, combine, evaluate, without
 
 # Python imports
+import arrow
 from os.path import abspath, expanduser, isdir, isfile
 from pathlib import Path
 import subprocess
 
 # Project imports
-from .errors import GIT_ISSUE
+from .errors import SHELL_ISSUE
 
 class Manage(Service):
 	"""Manage Service class
@@ -100,12 +101,25 @@ class Manage(Service):
 		if not isdir(self._real(data.path)):
 			lErrors.append([ 'record.path', 'not a valid directory' ])
 
+		# If we have a 'build' argument
+		if 'build' in data and data.build:
+
+			# Strip pre/post whitespace
+			data.build = data.build.strip()
+
+			# If it's not a valid directory
+			if not isdir(self._real(data.build)):
+
+				# Check the parent
+				if not isdir(Path(self._real(data.build)).parent.resolve()):
+					lErrors.append([ 'record.build', 'not a valid directory' ])
+
 		# Strip pre/post whitespace
-		data.output = data.output.strip()
+		data.web_root = data.web_root.strip()
 
 		# If it's not a valid directory
-		if not isdir(self._real(data.output)):
-			lErrors.append([ 'record.output', 'not a valid directory' ])
+		if not isdir(self._real(data.web_root)):
+			lErrors.append([ 'record.web_root', 'not a valid directory' ])
 
 		# If we have a 'backups' argument
 		if 'backups' in data and data.backups:
@@ -202,31 +216,81 @@ class Manage(Service):
 		# Simplify life
 		dPortal = self._conf.portals[req.data.name]
 
-		# Init the parts
-		lParts = [
+		# Change directory and git fetch
+		lCommands = [
 			'cd %s' % self._real(dPortal.path),
 			'%s fetch' % self._git
 		]
 
+		# If we have a clear flag
+		if 'clear' in req.data and req.data['clear']:
+			lCommands.append('%s checkout .' % self._git)
+
 		# If we have a checkout branch, add the checkout part
 		if 'checkout' in req.data and req.data.checkout:
-			lParts.append('%s checkout %s' % ( self._git, req.data.checkout ))
+			lCommands.append('%s checkout %s' % ( self._git, req.data.checkout ))
+
+		# git pull
+		lCommands.append(dPortal.git.submodules and \
+			'%s pull --recurse-submodules' % self._git or \
+			'%s pull'
+		)
 
 		# If we have an nvm alias, add the nvm part
 		if dPortal.node.nvm:
-			lParts.extend([
+			lCommands.extend([
 				'. ~/.nvm/nvm.sh',
 				'nvm alias %s' % dPortal.node.nvm
 			])
 
-		# Add npm install part
-		lParts.append(
-			dPortal.node.force_install and \
-				'npm install --force' or \
-				'npm install'
+		# npm install
+		lCommands.append(dPortal.node.force_install and \
+			'npm install --force' or \
+			'npm install'
 		)
 
-		# Build the
+		# The build command
+		lCommands.append('npm run %s' % dPortal.node.script or req.data.name)
+
+		# If we need a backup
+		if dPortal.backups and req.data.backup:
+			lCommands.append('mv %s %s/%s || true' % (
+				dPortal.web_root,
+				dPortal.backups,
+				arrow.get().format('YYYYMMDDHHmmss')
+			))
+
+		# Copy the built files to the web
+		lCommands.extend([
+			'mkdir -vp %s' % dPortal.web_root,
+			'cp -vr %s/* %s/.' % (
+				('build' in dPortal and \
+					dPortal.build or \
+					('%s/dist' % dPortal.path)
+				),
+				dPortal.web_root
+		)])
+
+		# Generate the command string
+		sCommands = ' && '.join(lCommands)
+
+		# Run the commands
+		try:
+			sOutput = subprocess.check_output(
+				sCommands,
+				shell = True,
+				stderr = subprocess.STDOUT
+			).decode().strip()
+
+		# If there's any errors
+		except subprocess.CalledProcessError as e:
+			return Error(SHELL_ISSUE, [ sCommands, str(e.args) ])
+
+		# Return the commands and out
+		return Response({
+			'commands': sCommands,
+			'output': sOutput
+		})
 
 	def portal_build_read(self, req: jobject) -> Response:
 		"""Portal Build read
@@ -278,7 +342,7 @@ class Manage(Service):
 				shell = True
 			)
 		except subprocess.CalledProcessError as e:
-			return Error(GIT_ISSUE, str(e))
+			return Error(SHELL_ISSUE, str(e))
 
 		# Fetch the git status
 		try:
@@ -287,7 +351,7 @@ class Manage(Service):
 				self._git
 			), shell = True).decode().strip()
 		except subprocess.CalledProcessError as e:
-			return Error(GIT_ISSUE, str(e))
+			return Error(SHELL_ISSUE, str(e))
 
 		# If checkout is allowed
 		if dPortal.git.checkout:
@@ -303,7 +367,7 @@ class Manage(Service):
 				).decode().strip().split('\n')
 
 			except subprocess.CalledProcessError as e:
-				return Error(GIT_ISSUE, str(e))
+				return Error(SHELL_ISSUE, str(e))
 
 			# Init return branches
 			dRet.branches = []
@@ -653,7 +717,7 @@ class Manage(Service):
 				shell = True
 			)
 		except subprocess.CalledProcessError as e:
-			return Error(GIT_ISSUE, str(e))
+			return Error(SHELL_ISSUE, str(e))
 
 		# Fetch the git status
 		try:
@@ -662,7 +726,7 @@ class Manage(Service):
 				self._git
 			), shell = True).decode().strip()
 		except subprocess.CalledProcessError as e:
-			return Error(GIT_ISSUE, str(e))
+			return Error(SHELL_ISSUE, str(e))
 
 		# If checkout is allowed
 		if dPortal.git.checkout:
@@ -678,7 +742,7 @@ class Manage(Service):
 				).decode().strip().split('\n')
 
 			except subprocess.CalledProcessError as e:
-				return Error(GIT_ISSUE, str(e))
+				return Error(SHELL_ISSUE, str(e))
 
 			# Init return branches
 			dRet.branches = []

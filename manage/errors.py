@@ -13,5 +13,5 @@ __created__		= "2025-02-10"
 # Ouroboros imports
 from body import errors as body
 
-GIT_ISSUE = 1500
-"""Git is setup wrong or a path is invalid"""
+SHELL_ISSUE = 1500
+"""Something went wrong running shell commands"""

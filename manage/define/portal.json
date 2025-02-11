@@ -3,6 +3,10 @@
 		"__type__": "string",
 		"__optional__": true
 	},
+	"build": {
+		"__type__": "string",
+		"__optional__": true
+	},
 	"git": {
 		"checkout": {
 			"__type__": "bool"
@@ -24,10 +28,10 @@
 			"__optional__": true
 		}
 	},
-	"output": {
+	"path": {
 		"__type__": "string"
 	},
-	"path": {
+	"web_root": {
 		"__type__": "string"
 	}
 }
