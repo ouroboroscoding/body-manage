@@ -24,6 +24,7 @@ from tools import clone, combine, evaluate, without
 
 # Python imports
 import arrow
+from os import scandir
 from os.path import abspath, expanduser, isdir, isfile
 from pathlib import Path
 import subprocess
@@ -186,6 +187,46 @@ class Manage(Service):
 		# Return OK
 		return Response(True)
 
+	def portal_backups_read(self, req: jobject) -> Response:
+		"""Portal Backups read
+
+		Returns the list of backups currently on the system
+
+		Arguments:
+			req (jobject): The request details, which can include 'data', \
+						'environment', and 'session'
+
+		Returns:
+			Response
+		"""
+
+		# Verify the permissions
+		access.verify(req.session, 'manage_portal_build', access.READ)
+
+		# Verify minimum data
+		try: evaluate(req.data, [ 'name' ])
+		except ValueError as e:
+			return Error(
+				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
+			)
+
+		# If the portal doesn't exist
+		if req.data.name not in self._conf.portals:
+			return Error(errors.DB_NO_RECORD, [ req.data.name, 'portal' ])
+
+		# If the portal doesn't allow backups
+		if not self._conf.portals[req.data.name].backups:
+			return Error(errors.RIGHTS, 'portal does not allow backups')
+
+		# Get all the folders currently in the backups folder
+		return Response([
+			f.name \
+			for f in scandir(
+				self._real(self._conf.portals[req.data.name].backups)
+			) \
+			if f.is_dir()
+		])
+
 	def portal_build_create(self, req: jobject) -> Response:
 		"""Portal Build create
 
@@ -203,7 +244,7 @@ class Manage(Service):
 		access.verify(req.session, 'manage_portal_build', access.CREATE)
 
 		# Verify minimum data
-		try: evaluate(req.data, [ 'name', 'backup' ])
+		try: evaluate(req.data, [ 'name' ])
 		except ValueError as e:
 			return Error(
 				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
@@ -254,7 +295,7 @@ class Manage(Service):
 
 		# If we need a backup
 		if dPortal.backups and req.data.backup:
-			lCommands.append('mv %s %s/%s || true' % (
+			lCommands.append('(mv -v %s %s/%s || true)' % (
 				dPortal.web_root,
 				dPortal.backups,
 				arrow.get().format('YYYYMMDDHHmmss')
@@ -286,7 +327,7 @@ class Manage(Service):
 		except subprocess.CalledProcessError as e:
 			return Error(SHELL_ISSUE, [ sCommands, str(e.args) ])
 
-		# Return the commands and out
+		# Return the commands output
 		return Response({
 			'commands': sCommands,
 			'output': sOutput
@@ -459,6 +500,94 @@ class Manage(Service):
 
 		# Return OK
 		return Response(True)
+
+	def portal_restore_create(self, req: jobject) -> Response:
+		"""Portal update
+
+		Updates an existing portal entry by name
+
+		Arguments:
+			req (jobject): The request details, which can include 'data', \
+						'environment', and 'session'
+
+		Returns:
+			Response
+		"""
+
+		# Verify the permissions
+		access.verify(req.session, 'manage_portal_build', access.READ)
+
+		# Verify minimum data
+		try: evaluate(req.data, [ 'name', 'backup' ])
+		except ValueError as e:
+			return Error(
+				errors.DATA_FIELDS, [ [ f, 'missing' ] for f in e.args ]
+			)
+
+		# If the portal doesn't exist
+		if req.data.name not in self._conf.portals:
+			return Error(errors.DB_NO_RECORD, [ req.data.name, 'portal' ])
+
+		# If the portal doesn't allow backups
+		if not self._conf.portals[req.data.name].backups:
+			return Error(errors.RIGHTS, 'portal does not allow backups')
+
+		# If the backup doesn't exist
+		if not isdir('%s/%s' % (
+			self._real(self._conf.portals[req.data.name].backups),
+			req.data.backup
+		)):
+			return Error(
+				errors.DATA_FIELDS, [ [ 'backup', 'folder not found' ] ]
+			)
+
+		# Simplify life
+		dPortal = self._conf.portals[req.data.name]
+
+		# Init the commands
+		lCommands = []
+
+		# If we want to first backup the current version
+		if 'backup_current' in req.data and req.data.backup_current:
+			lCommands.append('mv -v %s %s/previous' % (
+				self._real(dPortal.web_root),
+				self._real(dPortal.backups)
+			))
+
+		# Else, we will just remove it
+		else:
+			lCommands.append('rm -vRf %s' % self._real(dPortal.web_root))
+
+		# Copy all the files from the backup to the web root
+		lCommands.extend([
+			'mkdir -vp %s' % self._real(dPortal.web_root),
+			'cp -vr %s/%s/* %s/.' % (
+				self._real(dPortal.backups),
+				req.data.backup,
+				self._real(dPortal.web_root)
+			)
+		])
+
+		# Generate the command string
+		sCommands = ' && '.join(lCommands)
+
+		# Run the commands
+		try:
+			sOutput = subprocess.check_output(
+				sCommands,
+				shell = True,
+				stderr = subprocess.STDOUT
+			).decode().strip()
+
+		# If there's any errors
+		except subprocess.CalledProcessError as e:
+			return Error(SHELL_ISSUE, [ sCommands, str(e.args) ])
+
+		# Return the commands output
+		return Response({
+			'commands': sCommands,
+			'output': sOutput
+		})
 
 	def portal_update(self, req: jobject) -> Response:
 		"""Portal update
