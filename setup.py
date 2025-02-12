@@ -5,7 +5,7 @@ with open('README.md', 'r') as oF:
 
 setup(
 	name='body_manage',
-	version='1.0.0',
+	version='1.0.1',
 	description='Manage contains a service to manage the services themselves',
 	long_description=long_description,
 	long_description_content_type='text/markdown',
