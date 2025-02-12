@@ -144,9 +144,13 @@ class Manage(Service):
 				# Run NVM
 				try:
 					sOut = subprocess.check_output(
-						'. ~/.nvm/nvm.sh && nvm alias %s' % data.node.nvm,
-						shell = True
-					)
+						'bash -c ". %s && nvm alias %s"' % (
+							self._real('~/.nvm/nvm.sh'),
+							data.node.nvm
+						),
+						shell = True,
+						stderr = subprocess.STDOUT
+					).decode().strip()
 
 					# If we got not nothing
 					if not sOut:
@@ -215,17 +219,23 @@ class Manage(Service):
 			return Error(errors.DB_NO_RECORD, [ req.data.name, 'portal' ])
 
 		# If the portal doesn't allow backups
-		if not self._conf.portals[req.data.name].backups:
+		if 'backups' not in self._conf.portals[req.data.name] or \
+			not self._conf.portals[req.data.name].backups:
 			return Error(errors.RIGHTS, 'portal does not allow backups')
 
-		# Get all the folders currently in the backups folder
-		return Response([
+		# Get all the folders currently in the backups folder, sort them by
+		#	newest first
+		lBackups = [
 			f.name \
 			for f in scandir(
 				self._real(self._conf.portals[req.data.name].backups)
 			) \
 			if f.is_dir()
-		])
+		]
+		lBackups.sort(reverse = True)
+
+		# Return the backups
+		return Response(lBackups)
 
 	def portal_build_create(self, req: jobject) -> Response:
 		"""Portal Build create
@@ -280,7 +290,7 @@ class Manage(Service):
 		# If we have an nvm alias, add the nvm part
 		if dPortal.node.nvm:
 			lCommands.extend([
-				'. ~/.nvm/nvm.sh',
+				'. %s' % self._real('~/.nvm/nvm.sh'),
 				'nvm alias %s' % dPortal.node.nvm
 			])
 
@@ -291,29 +301,32 @@ class Manage(Service):
 		)
 
 		# The build command
-		lCommands.append('npm run %s' % dPortal.node.script or req.data.name)
+		lCommands.append('npm run %s' % dPortal.node.script or 'build')
 
-		# If we need a backup
-		if dPortal.backups and req.data.backup:
+		# If we allow and need a backup
+		if 'backups' in dPortal and dPortal.backups and \
+			'backup' in req.data and req.data.backup:
 			lCommands.append('(mv -v %s %s/%s || true)' % (
-				dPortal.web_root,
-				dPortal.backups,
+				self._real(dPortal.web_root),
+				self._real(dPortal.backups),
 				arrow.get().format('YYYYMMDDHHmmss')
 			))
+		else:
+			lCommands.append('rm -Rf %s' % self._real(dPortal.web_root))
 
 		# Copy the built files to the web
 		lCommands.extend([
-			'mkdir -vp %s' % dPortal.web_root,
+			'mkdir -vp %s' % self._real(dPortal.web_root),
 			'cp -vr %s/* %s/.' % (
-				('build' in dPortal and \
+				self._real(('build' in dPortal and \
 					dPortal.build or \
 					('%s/dist' % dPortal.path)
-				),
-				dPortal.web_root
+				)),
+				self._real(dPortal.web_root)
 		)])
 
 		# Generate the command string
-		sCommands = ' && '.join(lCommands)
+		sCommands = 'bash -c "%s"' % ' && '.join(lCommands)
 
 		# Run the commands
 		try:
@@ -722,7 +735,8 @@ class Manage(Service):
 			# Fetch the list of supervisor programs and store just the name
 			lOut = subprocess.check_output(
 				'supervisorctl avail',
-				shell = True).decode().split('\n')
+				shell = True
+			).decode().split('\n')
 
 			# Init the list of programs
 			lPrograms = []
