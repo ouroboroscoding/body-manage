@@ -36,6 +36,12 @@ class Manage(Service):
 	"""Manage Service class
 
 	Service for managing services and portals
+
+	docs-file:
+		rest
+
+	docs-body:
+		manage
 	"""
 
 	def __init__(self):
@@ -205,7 +211,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal_build', access.READ)
+		access.verify(
+			req.session, { 'name': 'manage_portal_build', 'right': access.READ }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -251,7 +259,10 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal_build', access.CREATE)
+		access.verify(
+			req.session,
+			{ 'name': 'manage_portal_build', 'right': access.CREATE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -360,7 +371,10 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal_build', access.READ)
+		access.verify(
+			req.session,
+			{ 'name': 'manage_portal_build', 'right': access.READ }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -453,7 +467,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal', access.CREATE)
+		access.verify(
+			req.session, { 'name': 'manage_portal', 'right': access.CREATE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name', 'record' ])
@@ -483,7 +499,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal', access.DELETE)
+		access.verify(
+			req.session, { 'name': 'manage_portal', 'right': access.DELETE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -528,7 +546,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal_build', access.READ)
+		access.verify(
+			req.session, { 'name': 'manage_portal_build', 'right': access.READ }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name', 'backup' ])
@@ -616,7 +636,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal', access.UPDATE)
+		access.verify(
+			req.session, { 'name': 'manage_portal', 'right': access.UPDATE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name', 'record' ])
@@ -649,7 +671,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_portal', access.READ)
+		access.verify(
+			req.session, { 'name': 'manage_portal', 'right': access.READ }
+		)
 
 		# Return the services
 		return Response(self._conf.portals)
@@ -824,7 +848,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_rest_build', access.READ)
+		access.verify(
+			req.session, { 'name': 'manage_rest_build', 'right': access.READ }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -917,7 +943,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_rest', access.CREATE)
+		access.verify(
+			req.session, { 'name': 'manage_rest', 'right': access.CREATE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name', 'record' ])
@@ -947,7 +975,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_rest', access.DELETE)
+		access.verify(
+			req.session, { 'name': 'manage_rest', 'right': access.DELETE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name' ])
@@ -992,7 +1022,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_rest', access.READ)
+		access.verify(
+			req.session, { 'name': 'manage_rest', 'right': access.READ }
+		)
 
 		# Return the services
 		return Response(self._conf.rest)
@@ -1011,7 +1043,9 @@ class Manage(Service):
 		"""
 
 		# Verify the permissions
-		access.verify(req.session, 'manage_rest', access.UPDATE)
+		access.verify(
+			req.session, { 'name': 'manage_rest', 'right': access.UPDATE }
+		)
 
 		# Verify minimum data
 		try: evaluate(req.data, [ 'name', 'record' ])
