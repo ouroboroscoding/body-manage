@@ -5,7 +5,7 @@ with open('README.md', 'r') as oF:
 
 setup(
 	name='body_manage',
-	version='1.0.1',
+	version='1.0.2',
 	description='Manage contains a service to manage the services themselves',
 	long_description=long_description,
 	long_description_content_type='text/markdown',
@@ -26,9 +26,9 @@ setup(
 	python_requires='>=3.10',
 	install_requires=[
 		'arrow>=1.3.0,<1.4',
-		'brain2-oc>=2.1.5,<2.2',
+		'brain2-oc>=2.2.1,<2.3',
 		'config-oc>=1.1.0,<1.2',
-		'define-oc>=1.0.3,<1.1',
+		'define-oc>=1.0.4,<1.1',
 		'email-smtp>=1.0.1,<1.1',
 		'jsonb>=1.0.0,<1.1'
 	],
