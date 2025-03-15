@@ -6,6 +6,14 @@ remotely.
 
 Please see [LICENSE](https://github.com/ouroboroscoding/body-manage/blob/main/LICENSE) for further information.
 
+# Requires
+body_manage requires python 3.10 or higher
+
+# Install
+```bash
+pip install body_manage
+```
+
 # Documentation
 
 [RESTful](https://github.com/ouroboroscoding/body-manage/blob/main/rest.md)
