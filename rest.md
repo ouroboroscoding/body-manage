@@ -1,6 +1,7 @@
 # Manage
 Service for managing services and portals
 
+## Requests
 - [Portal Backups read](#portal-backups-read)
 - [Portal Build create](#portal-build-create)
 - [Portal Build read](#portal-build-read)
@@ -18,129 +19,129 @@ Service for managing services and portals
 ## Portal Backups read
 Returns the list of backups currently on the system
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.read(
-	'portal/backups' 
+  'portal/backups' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal Build create
 Runs the update process for the specific portal
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.create(
-	'portal/build' 
+  'portal/build' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal Build read
 Fetches info about the repo for the specific portal
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.read(
-	'portal/build' 
+  'portal/build' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal create
 Creates a new portal and adds it to the config
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.create(
-	'portal' 
+  'portal' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal delete
 Deletes a specific portal by name
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.delete(
-	'portal' 
+  'portal' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal update
 Updates an existing portal entry by name
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.create(
-	'portal/restore' 
+  'portal/restore' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal update
 Updates an existing portal entry by name
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.update(
-	'portal' 
+  'portal' 
 ).then(data => {}, error => {});
 ```
 
 ## Portals read
 Returns all the current portals in the system
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.read(
-	'portals' 
+  'portals' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal Build read
 Fetches info about the repo for the specific rest
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.read(
-	'rest/build' 
+  'rest/build' 
 ).then(data => {}, error => {});
 ```
 
 ## REST create
 Creates a new REST entry and adds it to the config
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.create(
-	'rest' 
+  'rest' 
 ).then(data => {}, error => {});
 ```
 
 ## Portal delete
 Deletes a specific REST entry by name
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.delete(
-	'rest' 
+  'rest' 
 ).then(data => {}, error => {});
 ```
 
 ## REST read
 Returns all the current REST entries
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.read(
-	'rest' 
+  'rest' 
 ).then(data => {}, error => {});
 ```
 
 ## REST update
 Updates an existing rest entry by name
 
-Using @ouroboros/manage
 ```javascript
+import manage from '@ouroboros/manage';
 manage.update(
-	'rest' 
+  'rest' 
 ).then(data => {}, error => {});
 ```
