@@ -1,8 +1,8 @@
-# Body Manage
-[![pypi version](https://img.shields.io/pypi/v/body_manage.svg)](https://pypi.org/project/body_manage) ![MIT License](https://img.shields.io/pypi/l/body_manage.svg)
+# body_manage
+[![pypi version](https://img.shields.io/pypi/v/body_manage.svg)](https://pypi.org/project/body_manage) ![CUSTOM License](https://img.shields.io/pypi/l/body_manage.svg)
 
-Body 2.0 service that handles updating and controlling services and portals
-remotely.
+[body_oc](https://pypi.org/project/body-oc/) 2.0 service that handles updating
+and controlling services and portals remotely.
 
 Please see [LICENSE](https://github.com/ouroboroscoding/body-manage/blob/main/LICENSE) for further information.
 
@@ -14,6 +14,7 @@ body_manage requires python 3.10 or higher
 pip install body_manage
 ```
 
-# Documentation
-
-[RESTful](https://github.com/ouroboroscoding/body-manage/blob/main/rest.md)
+# RESTlike Documentation
+For full documentation on the individual requests avaialable via the service,
+check the [RESTlike](https://github.com/ouroboroscoding/body-manage/blob/main/rest.md)
+docs.
