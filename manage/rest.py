@@ -11,7 +11,6 @@ __email__		= "chris@ouroboroscoding.com"
 __created__		= "2025-02-08"
 
 # Ouroboros imports
-from body import register_services, REST
 from config import config
 import em
 
@@ -19,7 +18,7 @@ import em
 from pprint import pformat
 
 # Module imports
-from .service import Manage
+from manage.service import Manage
 
 def errors(error):
 
@@ -55,29 +54,7 @@ def run():
 		None
 	"""
 
-	# Init the service
-	oManage = Manage()
-
-	# Register the services
-	oRest = register_services({ 'manage': oManage })
-
-	# Get config
-	dManage = oRest['manage']
-
-	# Create the REST server using the Client instance
-	oServer = REST(
-		name = 'manage',
-		instance = oManage,
-		cors = config.body.rest.allowed('manage.local'),
-		on_errors = errors,
-		verbose = config.manage.verbose(False)
-	)
-
-	# Run the REST server
-	oServer.run(
-		host = dManage['host'],
-		port = dManage['port'],
-		workers = dManage['workers'],
-		timeout = 'timeout' in dManage and \
-			dManage['timeout'] or 30
+	# Init and run the service as REST server
+	Manage().rest(
+		on_errors = errors
 	)

@@ -44,23 +44,6 @@ class Manage(Service):
 		manage
 	"""
 
-	def __init__(self):
-		"""Constructor
-
-		Initialises the instance
-
-		Returns:
-			Manage
-		"""
-
-		# Load the definitions
-		sDefine = '%s/define' % Path(__file__).parent.resolve()
-		self._rest = Parent.from_file('%s/rest.json' % sDefine)
-		self._portal = Parent.from_file('%s/portal.json' % sDefine)
-
-		# Init the config
-		self.reset()
-
 	@classmethod
 	def _real(cls, path: str) -> str:
 		"""Real
@@ -834,6 +817,32 @@ class Manage(Service):
 		# Return OK
 		return Response(True)
 
+	def reset(self):
+		"""Reset
+
+		Called to reset the config and connections
+
+		Returns:
+			Manage
+		"""
+
+		# Generate the definitions path
+		sDefine = '%s/define' % Path(__file__).parent.resolve()
+
+		# Load the rest and portal Parents
+		self._rest = Parent.from_file('%s/rest.json' % sDefine)
+		self._portal = Parent.from_file('%s/portal.json' % sDefine)
+
+		# Store the name of the file
+		self._path = config.manage.config('../.data/manage.json')
+		self._git = config.manage.git('/usr/bin/git')
+
+		# Fetch the configuration and store it as a jobject
+		self._conf = jobject( jsonb.load( self._path ) )
+
+		# Return self for chaining
+		return self
+
 	def rest_build_read(self, req: jobject) -> Response:
 		"""Portal Build read
 
@@ -1072,22 +1081,3 @@ class Manage(Service):
 
 		# Call and return the validation methods
 		return self._rest_validation(req.data.name, dRest)
-
-	def reset(self):
-		"""Reset
-
-		Called to reset the config and connections
-
-		Returns:
-			Manage
-		"""
-
-		# Store the name of the file
-		self._path = config.manage.config('./manage.json')
-		self._git = config.manage.git('/usr/bin/git')
-
-		# Fetch the configuration and store it as a jobject
-		self._conf = jobject( jsonb.load( self._path ) )
-
-		# Return self for chaining
-		return self
