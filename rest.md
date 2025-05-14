@@ -26,6 +26,8 @@ manage.read(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## Portal Build create
 Runs the update process for the specific portal
 
@@ -35,6 +37,8 @@ manage.create(
   'portal/build' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
 
 ## Portal Build read
 Fetches info about the repo for the specific portal
@@ -46,6 +50,8 @@ manage.read(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## Portal create
 Creates a new portal and adds it to the config
 
@@ -55,6 +61,8 @@ manage.create(
   'portal' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
 
 ## Portal delete
 Deletes a specific portal by name
@@ -66,6 +74,8 @@ manage.delete(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## Portal update
 Updates an existing portal entry by name
 
@@ -75,6 +85,8 @@ manage.create(
   'portal/restore' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
 
 ## Portal update
 Updates an existing portal entry by name
@@ -86,6 +98,8 @@ manage.update(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## Portals read
 Returns all the current portals in the system
 
@@ -95,6 +109,8 @@ manage.read(
   'portals' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
 
 ## Portal Build read
 Fetches info about the repo for the specific rest
@@ -106,6 +122,8 @@ manage.read(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## REST create
 Creates a new REST entry and adds it to the config
 
@@ -115,6 +133,8 @@ manage.create(
   'rest' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
 
 ## Portal delete
 Deletes a specific REST entry by name
@@ -126,6 +146,8 @@ manage.delete(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## REST read
 Returns all the current REST entries
 
@@ -136,6 +158,8 @@ manage.read(
 ).then(data => {}, error => {});
 ```
 
+[ [requests](#requests) ]
+
 ## REST update
 Updates an existing rest entry by name
 
@@ -145,3 +169,5 @@ manage.update(
   'rest' 
 ).then(data => {}, error => {});
 ```
+
+[ [requests](#requests) ]
