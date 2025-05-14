@@ -20,7 +20,7 @@ from config import config
 from define import Parent
 from jobject import jobject
 import jsonb
-from tools import clone, combine, evaluate, without
+from tools import clone, combine, evaluate
 
 # Python imports
 import arrow
@@ -891,7 +891,7 @@ class Manage(Service):
 		# Get the repo up to date
 		try:
 			subprocess.check_output(
-				'cd %s && %s fetch' % (sDir, self._git),
+				'cd %s && %s fetch --all' % (sDir, self._git),
 				shell = True
 			)
 		except subprocess.CalledProcessError as e:
@@ -912,7 +912,7 @@ class Manage(Service):
 			# Fetch the list of branches
 			try:
 				lBranches = subprocess.check_output(
-					'cd %s && %s branch --list' % (
+					'cd %s && %s branch -r' % (
 						sDir,
 						self._git
 					),
